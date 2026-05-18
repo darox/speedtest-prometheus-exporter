@@ -1,0 +1,15 @@
+[package]
+name = "speedtest-exporter"
+version = "0.1.0"
+edition = "2024"
+resolver = "3"
+description = "Minimal Prometheus exporter for Ookla Speedtest CLI"
+
+[dependencies]
+axum = { version = "0.8.9", features = ["macros"] }
+tokio = { version = "1.52.3", features = ["full"] }
+prometheus = "0.14.0"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
