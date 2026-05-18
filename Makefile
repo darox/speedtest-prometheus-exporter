@@ -20,4 +20,4 @@ helm-lint:
 	helm template ./chart > /dev/null
 
 scan:
-	docker run --rm ghcr.io/aquasecurity/trivy image --severity CRITICAL,HIGH,MEDIUM speedtest-exporter
+	docker run --rm ghcr.io/aquasecurity/trivy@sha256:be1190afcb28352bfddc4ddeb71470835d16462af68d310f9f4bca710961a41e image --severity CRITICAL,HIGH,MEDIUM speedtest-exporter
