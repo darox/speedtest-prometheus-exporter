@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  "Update README on Release":
+  update-readme:
     runs-on: ubuntu-latest
     permissions:
       contents: write
