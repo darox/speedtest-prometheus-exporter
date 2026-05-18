@@ -65,3 +65,4 @@ The chart deploys with a hardened security profile by default:
 - `seccompProfile: RuntimeDefault`
 - ServiceAccount with `automountServiceAccountToken: false`
 - Optional NetworkPolicy (ingress on metrics port, egress DNS + HTTPS only)
+# Helm Chart
