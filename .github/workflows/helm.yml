@@ -10,7 +10,7 @@ on:
     branches: [main]
 
 jobs:
-  publish:
+  "Publish Helm Chart":
     runs-on: ubuntu-latest
     permissions:
       contents: write
