@@ -42,3 +42,12 @@ trivy image --severity CRITICAL,HIGH,MEDIUM speedtest-exporter
 ## Pinned Versions
 
 All base images pinned by manifest list digest, all Rust crates pinned by Cargo.lock, Ookla CLI pinned to v1.2.0.
+
+## Rules
+
+After every code change:
+1. **Build** — `docker build -t speedtest-exporter .` must succeed
+2. **Test** — `docker build --target test -t speedtest-exporter:test .` must pass all tests
+3. **Scan** — `trivy image --severity CRITICAL,HIGH speedtest-exporter` must be clean
+4. **Lint** — `cargo clippy -- -D warnings` (run in builder image if needed)
+5. **Format** — `cargo fmt --check` (run in builder image if needed)
