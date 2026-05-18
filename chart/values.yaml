@@ -1,0 +1,97 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/darox/speedtest-exporter
+  pullPolicy: IfNotPresent
+  tag: ""
+  digest: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  automountServiceAccountToken: false
+  annotations: {}
+
+# Environment variables passed to the exporter
+env:
+  PORT: "9798"
+  SPEEDTEST_INTERVAL_SECS: "300"
+  SPEEDTEST_SERVER_ID: ""
+  RUST_LOG: "info"
+
+# extraEnv adds additional environment variables
+extraEnv: []
+
+# envFrom adds envFrom references (e.g. secretRef)
+envFrom: []
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+service:
+  type: ClusterIP
+  port: 9798
+  annotations: {}
+
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  scrapeTimeout: 10s
+  namespace: ""
+  labels: {}
+  annotations: {}
+
+networkPolicy:
+  enabled: false
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  runAsGroup: 65534
+  fsGroup: 65534
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: metrics
+  initialDelaySeconds: 5
+  periodSeconds: 30
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: metrics
+  initialDelaySeconds: 3
+  periodSeconds: 10
+  failureThreshold: 3
+
+startupProbe:
+  httpGet:
+    path: /health
+    port: metrics
+  periodSeconds: 5
+  failureThreshold: 30
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

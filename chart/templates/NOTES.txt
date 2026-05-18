@@ -1,0 +1,13 @@
+speedtest-exporter is running!
+
+Metrics endpoint: http://{{ include "speedtest-exporter.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}/metrics
+
+Get metrics:
+  kubectl port-forward svc/{{ include "speedtest-exporter.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
+  curl http://localhost:{{ .Values.service.port }}/metrics
+
+Verify deployment:
+  helm test {{ .Release.Name }}
+
+Upgrade idempotently:
+  helm upgrade --install {{ .Release.Name }} ./chart -f values.yaml
