@@ -1,0 +1,30 @@
+name: Publish Helm Chart
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "chart/**"
+      - ".github/workflows/helm.yml"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: helm/chart-releaser-action@a0d2dc62c5e491af8ef6ba64a2e02bcf3fb33aa1 # v1.7.0
+        with:
+          charts_dir: chart
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

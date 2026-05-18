@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "Running custom pre-commit hooks..."
+
+docker build --target test -t speedtest-exporter:test .
+docker build -t speedtest-exporter .
+trivy image --severity CRITICAL,HIGH speedtest-exporter
