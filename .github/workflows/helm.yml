@@ -6,6 +6,8 @@ on:
     paths:
       - "chart/**"
       - ".github/workflows/helm.yml"
+  pull_request:
+    branches: [main]
 
 jobs:
   publish:
@@ -17,13 +19,19 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      - name: Skip on PR without chart changes
+        if: github.event_name == 'pull_request'
+        run: echo "Skipping Helm publish on PR"
+
       - uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        if: github.event_name != 'pull_request'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: helm/chart-releaser-action@a0d2dc62c5e491af8ef6ba64a2e02bcf3fb33aa1 # v1.7.0
+        if: github.event_name != 'pull_request'
         with:
           charts_dir: chart
         env:

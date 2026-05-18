@@ -3,6 +3,8 @@ name: Update README on Release
 on:
   release:
     types: [published]
+  pull_request:
+    branches: [main]
 
 jobs:
   update-readme:
@@ -12,11 +14,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        if: github.event_name == 'release'
         with:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Skip on PR
+        if: github.event_name == 'pull_request'
+        run: echo "Skipping README update on PR"
+
       - name: Update README with release version
+        if: github.event_name == 'release'
         run: |
           VERSION="${{ github.ref_name }}"
           CHART_VERSION=$(grep '^version:' chart/Chart.yaml | awk '{print $2}')
