@@ -40,19 +40,15 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha
 
-      # Test: build for native arch only, load into docker
+      # Test: build for native arch only (tests run during build)
       - uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: .
           target: test
-          load: true
-          tags: speedtest-exporter:test
           cache-from: |
             type=gha,scope=test
             type=gha,scope=builder
-          cache-to: |
-            type=gha,scope=test,mode=max
-            type=gha,scope=builder,mode=max
+          cache-to: type=gha,scope=test,mode=max
 
       # Push: multi-arch with cache
       - uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
