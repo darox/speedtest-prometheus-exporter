@@ -46,6 +46,5 @@ docker build --target test -t speedtest-exporter:test .
 ## Architecture
 
 - Rust binary statically linked with musl
-- Ookla CLI v1.2.0 subprocess for measurement
+- Ookla CLI subprocess for measurement
 - `gcr.io/distroless/static` base image (no shell, no glibc)
-- 8.3MB image, 0 CVEs
