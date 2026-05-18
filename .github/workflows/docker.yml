@@ -14,7 +14,7 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  "Build and Push Docker Image":
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: write
