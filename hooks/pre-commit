@@ -5,4 +5,4 @@ echo "Running custom pre-commit hooks..."
 
 docker build --target test -t speedtest-exporter:test .
 docker build -t speedtest-exporter .
-trivy image --severity CRITICAL,HIGH speedtest-exporter
+docker run --rm ghcr.io/aquasecurity/trivy image --severity CRITICAL,HIGH speedtest-exporter
