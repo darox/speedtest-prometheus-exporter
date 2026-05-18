@@ -72,3 +72,4 @@ See [chart/README.md](chart/README.md) for all values.
 - Rust binary statically linked with musl
 - Ookla CLI subprocess for measurement
 - `gcr.io/distroless/static` base image (no shell, no glibc)
+test
