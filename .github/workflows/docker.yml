@@ -3,20 +3,9 @@ name: Build and Push Docker Image
 on:
   push:
     branches: [main]
-    paths:
-      - "src/**"
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - "Dockerfile"
-      - ".github/workflows/docker.yml"
+    tags: ["v*"]
   pull_request:
     branches: [main]
-    paths:
-      - "src/**"
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - "Dockerfile"
-      - ".github/workflows/docker.yml"
   release:
     types: [published]
 
@@ -68,11 +57,8 @@ jobs:
           VERSION="${{ github.ref_name }}"
           CLEAN_VERSION="${VERSION#v}"
           
-          # Update Chart.yaml
           sed -i "s/^version: .*/version: ${CLEAN_VERSION}/" chart/Chart.yaml
           sed -i "s/^appVersion: .*/appVersion: \"${CLEAN_VERSION}\"/" chart/Chart.yaml
-          
-          # Update values.yaml image repository
           sed -i "s|repository: .*|repository: ghcr.io/darox/speedtest-exporter|" chart/values.yaml
           
           git config user.name "github-actions[bot]"
