@@ -47,16 +47,20 @@ docker build --target test -t speedtest-exporter:test .
 ## Helm Chart
 
 ```bash
+# Add repository
+helm repo add speedtest-exporter https://darox.github.io/speedtest-prometheus-exporter
+helm repo update
+
 # Install
-helm upgrade --install speedtest-exporter ./chart
+helm upgrade --install speedtest-exporter speedtest-exporter/speedtest-exporter
 
 # With Prometheus Operator
-helm upgrade --install speedtest-exporter ./chart \
+helm upgrade --install speedtest-exporter speedtest-exporter/speedtest-exporter \
   --set serviceMonitor.enabled=true \
   --set 'serviceMonitor.labels.release=prometheus'
 
 # Custom interval and server
-helm upgrade --install speedtest-exporter ./chart \
+helm upgrade --install speedtest-exporter speedtest-exporter/speedtest-exporter \
   --set env.SPEEDTEST_INTERVAL_SECS=60 \
   --set env.SPEEDTEST_SERVER_ID=1234
 ```
