@@ -5,7 +5,7 @@ Minimal Prometheus exporter for Ookla Speedtest CLI.
 ## Quick Start
 
 ```bash
-docker run -d -p 9798:9798 speedtest-exporter
+docker run -d -p 9798:9798 ghcr.io/darox/speedtest-exporter:main
 ```
 
 ## Configuration
@@ -42,6 +42,25 @@ docker buildx build --platform linux/arm64,linux/amd64 -t speedtest-exporter .
 # Run tests
 docker build --target test -t speedtest-exporter:test .
 ```
+
+## Helm Chart
+
+```bash
+# Install
+helm upgrade --install speedtest-exporter ./chart
+
+# With Prometheus Operator
+helm upgrade --install speedtest-exporter ./chart \
+  --set serviceMonitor.enabled=true \
+  --set 'serviceMonitor.labels.release=prometheus'
+
+# Custom interval and server
+helm upgrade --install speedtest-exporter ./chart \
+  --set env.SPEEDTEST_INTERVAL_SECS=60 \
+  --set env.SPEEDTEST_SERVER_ID=1234
+```
+
+See [chart/README.md](chart/README.md) for all values.
 
 ## Architecture
 
