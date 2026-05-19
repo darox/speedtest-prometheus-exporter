@@ -4,10 +4,13 @@
 
 VERSION ?=
 
-lint:
+builder:
+	docker build --target builder -t speedtest-exporter:builder .
+
+lint: builder
 	docker run --rm --entrypoint "" speedtest-exporter:builder cargo clippy -- -D warnings
 
-fmt:
+fmt: builder
 	docker run --rm --entrypoint "" speedtest-exporter:builder cargo fmt --check
 
 test:
@@ -27,9 +30,8 @@ scan:
 	docker run --rm ghcr.io/aquasecurity/trivy@sha256:be1190afcb28352bfddc4ddeb71470835d16462af68d310f9f4bca710961a41e image --severity CRITICAL,HIGH,MEDIUM speedtest-exporter
 
 audit:
-	docker run --rm -v $(shell pwd):/app -w /app \
-		rust:1.95-slim \
-		sh -c 'cargo install cargo-audit --locked 2>/dev/null && cargo audit'
+	docker build --target audit -t speedtest-exporter:audit . && \
+	docker run --rm -v $(shell pwd):/app -w /app speedtest-exporter:audit cargo audit
 
 # ── Release ──────────────────────────────────────────────
 # Ordered pipeline: validate → build → update → publish → push → tag

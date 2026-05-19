@@ -35,6 +35,10 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
 FROM builder AS test
 RUN cargo test
 
+# Stage 2b: Audit (cargo-audit pre-installed)
+FROM builder AS audit
+RUN cargo install cargo-audit
+
 # Stage 3: Download Ookla CLI v1.2.0 (pinned, statically linked)
 # Pin manifest list: debian:bookworm-slim
 FROM docker.io/library/debian:bookworm-slim@sha256:67b30a61dc87758f0caf819646104f29ecbda97d920aaf5edc834128ac8493d3 AS ookla-downloader
