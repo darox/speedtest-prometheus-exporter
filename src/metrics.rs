@@ -132,11 +132,13 @@ impl MetricsUpdater for PrometheusMetrics {
 
 // --- Test adapter ---
 
+#[allow(dead_code)]
 pub struct RecordingMetrics {
     pub successes: Mutex<Vec<SpeedtestResult>>,
     pub failures: Mutex<usize>,
 }
 
+#[allow(dead_code)]
 impl RecordingMetrics {
     pub fn new() -> Self {
         Self {
