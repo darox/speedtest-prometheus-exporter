@@ -2,8 +2,8 @@ apiVersion: v2
 name: speedtest-exporter
 description: Prometheus exporter for Ookla Speedtest CLI
 type: application
-version: 0.0.2
-appVersion: "0.0.2"
+version: 0.0.3
+appVersion: "0.0.3"
 kubeVersion: ">=1.25.0"
 home: https://github.com/darox/speedtest-prometheus-exporter
 sources:
