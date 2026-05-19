@@ -1,0 +1,25 @@
+apiVersion: v1
+entries:
+  speedtest-exporter:
+  - apiVersion: v2
+    appVersion: 0.0.4
+    created: "2026-05-19T09:09:40.16401+02:00"
+    description: Prometheus exporter for Ookla Speedtest CLI
+    digest: 4f44796d1f66b555be04a64ca9a09abfb0fceafbe66006ef5a19696003210e19
+    home: https://github.com/darox/speedtest-prometheus-exporter
+    keywords:
+    - prometheus
+    - exporter
+    - speedtest
+    - network
+    kubeVersion: '>=1.25.0'
+    maintainers:
+    - name: darox
+    name: speedtest-exporter
+    sources:
+    - https://github.com/darox/speedtest-prometheus-exporter
+    type: application
+    urls:
+    - https://darox.github.io/speedtest-prometheus-exporter/speedtest-exporter-0.0.4.tgz
+    version: 0.0.4
+generated: "2026-05-19T09:09:40.16275+02:00"
