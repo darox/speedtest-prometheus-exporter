@@ -90,7 +90,7 @@ release-update-chart:
 	sed -i '' "s|ghcr.io/darox/speedtest-exporter:[a-zA-Z0-9._-]*|ghcr.io/darox/speedtest-exporter:$${CLEAN}|g" README.md && \
 	sed -i '' "s|ghcr.io/darox/speedtest-exporter:[a-zA-Z0-9._-]*|ghcr.io/darox/speedtest-exporter:$${CLEAN}|g" chart/README.md && \
 	grep -q "version: $${CLEAN}" chart/Chart.yaml || { echo "Chart.yaml version mismatch"; exit 1; } && \
-	grep -q 'appVersion: "$${CLEAN}"' chart/Chart.yaml || { echo "Chart.yaml appVersion mismatch"; exit 1; } && \
+	grep -q "appVersion: \"$${CLEAN}\"" chart/Chart.yaml || { echo "Chart.yaml appVersion mismatch"; exit 1; } && \
 	grep -q "speedtest-exporter:$${CLEAN}" README.md || { echo "README.md image tag mismatch"; exit 1; } && \
 	grep -q "speedtest-exporter:$${CLEAN}" chart/README.md || { echo "chart/README.md image tag mismatch"; exit 1; }
 
