@@ -75,8 +75,8 @@ release-check:
 
 release-build:
 	@SHA="$${RELEASE_SHA:-$$(git rev-parse --short HEAD)}" && \
-	echo "Building multi-arch image (sha-$${SHA})" && \
-	docker buildx build --builder multiarch --platform linux/amd64,linux/arm64 --load -t speedtest-exporter:release .
+	echo "Building local image for scan (sha-$${SHA})" && \
+	docker build -t speedtest-exporter:release .
 
 release-scan:
 	docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
