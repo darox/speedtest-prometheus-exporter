@@ -61,6 +61,7 @@ jobs:
     permissions:
       contents: write
       packages: write
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -83,3 +84,19 @@ jobs:
           MAJOR="${CLEAN%%.*}"
 
           docker buildx imagetools create -t "${IMAGE}:${VERSION}" -t "${IMAGE}:${MINOR}" -t "${IMAGE}:${MAJOR}" "${IMAGE}:sha-${SHORT_SHA}"
+
+      - name: Bump chart version and update README
+        run: |
+          VERSION="${{ github.ref_name }}"
+          CLEAN="${VERSION#v}"
+
+          sed -i "s/^version: .*/version: ${CLEAN}/" chart/Chart.yaml
+          sed -i 's/^appVersion: .*/appVersion: "'${CLEAN}'"/' chart/Chart.yaml
+          sed -i "s|ghcr.io/darox/speedtest-exporter:[a-zA-Z0-9._-]*|ghcr.io/darox/speedtest-exporter:${CLEAN}|g" README.md
+
+      - uses: peter-evans/create-pull-request@v8
+        with:
+          branch: release/${{ github.ref_name }}
+          title: "chore: release ${{ github.ref_name }}"
+          commit-message: "chore: release ${{ github.ref_name }}"
+          delete-branch: true
