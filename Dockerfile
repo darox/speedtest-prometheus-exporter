@@ -35,9 +35,12 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
 FROM builder AS test
 RUN cargo test
 
-# Stage 2b: Audit (cargo-audit pre-installed)
-FROM builder AS audit
+# Stage 2b: Audit tool (cached independently of source)
+FROM docker.io/library/rust:1.95-slim@sha256:5021128d455987e7e7d6586bd7288fa876614821292614acbb761c21fc1ebb15 AS audit-tool
 RUN cargo install cargo-audit
+
+# Stage 2c: Audit (runs against mounted source)
+FROM audit-tool AS audit
 
 # Stage 3: Download Ookla CLI v1.2.0 (pinned, statically linked)
 # Pin manifest list: debian:bookworm-slim
