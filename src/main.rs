@@ -78,8 +78,7 @@ async fn main() {
     );
 
     let registry = Registry::new();
-    let metrics: Arc<dyn MetricsUpdater> =
-        Arc::new(PrometheusMetrics::new(&registry));
+    let metrics: Arc<dyn MetricsUpdater> = Arc::new(PrometheusMetrics::new(&registry));
     let runner: Arc<dyn SpeedtestRunner> =
         Arc::new(crate::runner::OoklaCliRunner::new(config.server_id));
 

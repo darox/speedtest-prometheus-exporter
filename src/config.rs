@@ -70,12 +70,13 @@ impl Config {
 mod tests {
     use super::*;
 
-    fn with_env(vars: &[(&str, Option<&str>)], f: impl FnOnce() -> Result<Config, ConfigError>) -> Result<Config, ConfigError> {
+    fn with_env(
+        vars: &[(&str, Option<&str>)],
+        f: impl FnOnce() -> Result<Config, ConfigError>,
+    ) -> Result<Config, ConfigError> {
         // Save current values
-        let saved: Vec<(&str, Option<String>)> = vars
-            .iter()
-            .map(|(k, _)| (*k, env::var(*k).ok()))
-            .collect();
+        let saved: Vec<(&str, Option<String>)> =
+            vars.iter().map(|(k, _)| (*k, env::var(*k).ok())).collect();
 
         // Set test values
         for (key, value) in vars {
@@ -147,7 +148,10 @@ mod tests {
     #[test]
     fn rejects_invalid_port() {
         let err = with_env(
-            &[("PORT", Some("not-a-number")), ("SPEEDTEST_INTERVAL_SECS", None)],
+            &[
+                ("PORT", Some("not-a-number")),
+                ("SPEEDTEST_INTERVAL_SECS", None),
+            ],
             Config::from_env,
         )
         .unwrap_err();

@@ -91,7 +91,8 @@ impl SpeedtestRunner for OoklaCliRunner {
     fn run(&self) -> Result<SpeedtestResult, SpeedtestError> {
         let start = std::time::Instant::now();
 
-        let output = self.build_command()
+        let output = self
+            .build_command()
             .output()
             .map_err(|e| SpeedtestError::ExecutionFailed(e.to_string()))?;
 
@@ -101,13 +102,10 @@ impl SpeedtestRunner for OoklaCliRunner {
         }
 
         let stdout = String::from_utf8_lossy(&output.stdout);
-        let last_line = stdout
-            .lines()
-            .last()
-            .ok_or(SpeedtestError::EmptyOutput)?;
+        let last_line = stdout.lines().last().ok_or(SpeedtestError::EmptyOutput)?;
 
-        let result: OoklaResult =
-            serde_json::from_str(last_line).map_err(|e| SpeedtestError::ParseFailed(e.to_string()))?;
+        let result: OoklaResult = serde_json::from_str(last_line)
+            .map_err(|e| SpeedtestError::ParseFailed(e.to_string()))?;
 
         let elapsed = start.elapsed().as_secs_f64();
 
@@ -160,19 +158,17 @@ impl SpeedtestRunner for MockRunner {
         *self.call_count.lock().unwrap() += 1;
         let seq = self.sequence.lock().unwrap();
         let idx = *self.call_count.lock().unwrap() - 1;
-        seq.get(idx)
-            .cloned()
-            .unwrap_or(Ok(SpeedtestResult {
-                download_bps: 0.0,
-                upload_bps: 0.0,
-                ping_latency_seconds: 0.0,
-                jitter_seconds: 0.0,
-                packet_loss_ratio: 0.0,
-                duration_seconds: 0.0,
-                server_name: "mock".into(),
-                server_country: "Mockland".into(),
-                server_isp: "MockISP".into(),
-            }))
+        seq.get(idx).cloned().unwrap_or(Ok(SpeedtestResult {
+            download_bps: 0.0,
+            upload_bps: 0.0,
+            ping_latency_seconds: 0.0,
+            jitter_seconds: 0.0,
+            packet_loss_ratio: 0.0,
+            duration_seconds: 0.0,
+            server_name: "mock".into(),
+            server_country: "Mockland".into(),
+            server_isp: "MockISP".into(),
+        }))
     }
 }
 
@@ -300,6 +296,9 @@ mod tests {
         let runner = OoklaCliRunner::new(Some("50092".to_string()));
         let cmd = runner.build_command();
         let args = cmd.get_args().collect::<Vec<_>>();
-        assert_eq!(args, ["--accept-license", "--format=json", "--server-id", "50092"]);
+        assert_eq!(
+            args,
+            ["--accept-license", "--format=json", "--server-id", "50092"]
+        );
     }
 }
