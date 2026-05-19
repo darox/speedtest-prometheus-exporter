@@ -1,5 +1,5 @@
 .PHONY: lint fmt test docker docker-test helm-lint scan audit \
-	release release-check release-build release-push release-update-chart release-publish-chart release-tag \
+	release release-check release-build release-scan release-update-chart release-publish-chart release-tag release-push \
 	kind-create kind-load kind-deploy kind-destroy kind-clean
 
 VERSION ?=
@@ -36,30 +36,47 @@ audit:
 	docker run --rm -v $(shell pwd):/app -w /app speedtest-exporter:audit cargo audit
 
 # ── Release ──────────────────────────────────────────────
-# Ordered pipeline: validate → build → update → publish → push → tag
-# No irreversible action occurs before all validation passes.
+# Ordered pipeline: validate → build → scan → update → tag → publish → push
+# All local operations complete before any external push.
+# Tag variables computed once by the orchestrator, exported to sub-targets.
 
-release: release-check release-build release-update-chart release-publish-chart release-push release-tag
+release:
+	@if [ -z "$${VERSION}" ]; then echo "Usage: make release VERSION=v0.0.X"; exit 1; fi
+	@CLEAN="$${VERSION#v}" && \
+	MINOR="$${CLEAN%.*}" && \
+	MAJOR="$${CLEAN%%.*}" && \
+	SHORT_SHA=$$(git rev-parse --short HEAD) && \
+	export RELEASE_CLEAN="$${CLEAN}" RELEASE_MINOR="$${MINOR}" RELEASE_MAJOR="$${MAJOR}" RELEASE_SHA="$${SHORT_SHA}" && \
+	$(MAKE) release-check && \
+	$(MAKE) release-build && \
+	$(MAKE) release-scan && \
+	$(MAKE) release-update-chart && \
+	$(MAKE) release-tag && \
+	$(MAKE) release-publish-chart && \
+	$(MAKE) release-push
 
 release-check:
 	@if [ -z "$${VERSION}" ]; then echo "Usage: make release VERSION=v0.0.X"; exit 1; fi
 	@if [ -n "$$(git status --short)" ]; then echo "Working tree dirty"; exit 1; fi
 	@if [ "$$(git branch --show-current)" != "main" ]; then echo "Must be on main branch"; exit 1; fi
-	docker build -t speedtest-exporter .
 	$(MAKE) lint
 	$(MAKE) fmt
 	$(MAKE) test
-	$(MAKE) scan
 	$(MAKE) audit
 	$(MAKE) helm-lint
 
 release-build:
-	@SHORT_SHA=$$(git rev-parse --short HEAD) && \
-	echo "Building multi-arch image (sha-$${SHORT_SHA})" && \
+	@SHA="$${RELEASE_SHA:-$$(git rev-parse --short HEAD)}" && \
+	echo "Building multi-arch image (sha-$${SHA})" && \
 	docker buildx build --platform linux/amd64,linux/arm64 -t speedtest-exporter:release .
 
+release-scan:
+	docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+		ghcr.io/aquasecurity/trivy@sha256:be1190afcb28352bfddc4ddeb71470835d16462af68d310f9f4bca710961a41e \
+		image --severity CRITICAL,HIGH,MEDIUM speedtest-exporter:release
+
 release-update-chart:
-	@CLEAN="$${VERSION#v}" && \
+	@CLEAN="$${RELEASE_CLEAN:-$${VERSION#v}}" && \
 	sed -i '' "s/^version: .*/version: $${CLEAN}/" chart/Chart.yaml && \
 	sed -i '' 's/^appVersion: .*/appVersion: "'$${CLEAN}'"/' chart/Chart.yaml && \
 	sed -i '' "s|ghcr.io/darox/speedtest-exporter:[a-zA-Z0-9._-]*|ghcr.io/darox/speedtest-exporter:$${CLEAN}|g" README.md && \
@@ -69,10 +86,20 @@ release-update-chart:
 	grep -q "speedtest-exporter:$${CLEAN}" README.md || { echo "README.md image tag mismatch"; exit 1; } && \
 	grep -q "speedtest-exporter:$${CLEAN}" chart/README.md || { echo "chart/README.md image tag mismatch"; exit 1; }
 
+release-tag:
+	@CLEAN="$${RELEASE_CLEAN:-$${VERSION#v}}" && \
+	if git tag -l "$${VERSION}" | grep -q "$${VERSION}"; then echo "Tag $${VERSION} already exists"; exit 1; fi && \
+	git add chart/Chart.yaml README.md chart/README.md && \
+	git diff --cached --stat && \
+	echo "Committing and tagging $${VERSION} (local only)" && \
+	git commit -m "Release $${VERSION}" && \
+	git tag "$${VERSION}"
+
 release-publish-chart:
-	@CLEAN="$${VERSION#v}" && \
+	@CLEAN="$${RELEASE_CLEAN:-$${VERSION#v}}" && \
 	WORKTREE="$$(mktemp -d)" && \
 	git worktree add "$${WORKTREE}" gh-pages && \
+	trap 'echo "Cleaning up worktree..."; git worktree remove -f "$${WORKTREE}" 2>/dev/null; rm -rf "$${WORKTREE}"' EXIT && \
 	helm package chart && \
 	mv speedtest-exporter-*.tgz "$${WORKTREE}/" && \
 	(cd "$${WORKTREE}" && \
@@ -81,31 +108,27 @@ release-publish-chart:
 		git commit -m "Publish Helm chart v$${CLEAN}") && \
 	(cd "$${WORKTREE}" && git push origin gh-pages) && \
 	git worktree remove "$${WORKTREE}" && \
-	rm -rf "$${WORKTREE}"
+	rm -rf "$${WORKTREE}" && \
+	trap - EXIT
 
 release-push:
 	@IMAGE="ghcr.io/darox/speedtest-exporter" && \
-	CLEAN="$${VERSION#v}" && \
-	MINOR="$${CLEAN%.*}" && \
-	MAJOR="$${CLEAN%%.*}" && \
-	SHORT_SHA=$$(git rev-parse --short HEAD) && \
-	echo "Pushing image tags: $${VERSION} $${CLEAN} $${MINOR} $${MAJOR} sha-$${SHORT_SHA}" && \
+	CLEAN="$${RELEASE_CLEAN:-$${VERSION#v}}" && \
+	MINOR="$${RELEASE_MINOR:-$${CLEAN%.*}}" && \
+	MAJOR="$${RELEASE_MAJOR:-$${CLEAN%%.*}}" && \
+	SHA="$${RELEASE_SHA:-$$(git rev-parse --short HEAD)}" && \
+	echo "Pushing image tags: $${VERSION} $${CLEAN} $${MINOR} $${MAJOR} sha-$${SHA}" && \
 	docker tag speedtest-exporter:release "$${IMAGE}:$${VERSION}" && \
 	docker tag speedtest-exporter:release "$${IMAGE}:$${CLEAN}" && \
 	docker tag speedtest-exporter:release "$${IMAGE}:$${MINOR}" && \
 	docker tag speedtest-exporter:release "$${IMAGE}:$${MAJOR}" && \
-	docker tag speedtest-exporter:release "$${IMAGE}:sha-$${SHORT_SHA}" && \
+	docker tag speedtest-exporter:release "$${IMAGE}:sha-$${SHA}" && \
 	docker login ghcr.io -u darox -p "$$(gh auth token)" && \
 	docker push "$${IMAGE}:$${VERSION}" && \
 	docker push "$${IMAGE}:$${CLEAN}" && \
 	docker push "$${IMAGE}:$${MINOR}" && \
 	docker push "$${IMAGE}:$${MAJOR}" && \
-	docker push "$${IMAGE}:sha-$${SHORT_SHA}"
-
-release-tag:
-	@git add chart/Chart.yaml README.md chart/README.md && \
-	git commit -m "Release $${VERSION}" && \
-	git tag "$${VERSION}" && \
+	docker push "$${IMAGE}:sha-$${SHA}" && \
 	git push origin main "$${VERSION}"
 
 # ── Local Kind Cluster ───────────────────────────────────

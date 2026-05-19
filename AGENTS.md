@@ -60,16 +60,17 @@ Cluster name is configurable: `make kind-create KIND_CLUSTER=my-cluster`.
 VERSION=v0.0.X make release
 ```
 
-Ordered pipeline — no irreversible action before all validation passes:
+Ordered pipeline — all local operations complete before any external push. Tag variables (`CLEAN`, `MINOR`, `MAJOR`, `SHA`) computed once by the orchestrator and exported to sub-targets.
 
 | Phase | Target | Description |
 |---|---|---|
-| Validate | `release-check` | Clean tree, branch check, build, lint, fmt, test, scan, audit, helm-lint |
-| Build | `release-build` | Multi-arch image (local only, not pushed) |
-| Update | `release-update-chart` | Bump Chart.yaml, README.md, chart/README.md + verify sed succeeded |
-| Publish | `release-publish-chart` | Package chart, publish to gh-pages via git worktree |
-| Push | `release-push` | Tag and push image to GHCR (`vX.Y.Z`, `X.Y`, `X`, `sha-SHORT`) |
-| Tag | `release-tag` | Commit chart changes, create git tag, push to origin |
+| Validate | `release-check` | Clean tree, branch check, lint, fmt, test, audit, helm-lint |
+| Build | `release-build` | Multi-arch image (local only, tagged `speedtest-exporter:release`) |
+| Scan | `release-scan` | Trivy scan against the release image |
+| Update | `release-update-chart` | Bump Chart.yaml, README.md, chart/README.md + verify via grep |
+| Tag | `release-tag` | Commit chart changes, create git tag (local only, duplicate tag guard) |
+| Publish | `release-publish-chart` | Package chart, publish to gh-pages via git worktree (trap cleanup) |
+| Push | `release-push` | Tag and push image to GHCR (`vX.Y.Z`, `X.Y`, `X`, `sha-SHORT`), push git tag |
 
 Run `make release-check` for a dry-run validation without any side effects.
 
