@@ -3,7 +3,12 @@ name: Build and Push Docker Image
 on:
   push:
     branches: [main]
-    tags: ["v*"]
+    paths:
+      - "src/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "Dockerfile"
+      - ".github/workflows/docker.yml"
   pull_request:
     branches: [main]
   release:
@@ -39,6 +44,7 @@ jobs:
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
             type=sha
 
       - uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
@@ -51,18 +57,25 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Sync Helm Chart on Release
+      - name: Sync chart version and update README on release
         if: github.event_name == 'release'
         run: |
           VERSION="${{ github.ref_name }}"
           CLEAN_VERSION="${VERSION#v}"
-          
+
+          git fetch origin main
+          git checkout main
+          git pull origin main
+
+          # Update Chart.yaml
           sed -i "s/^version: .*/version: ${CLEAN_VERSION}/" chart/Chart.yaml
           sed -i "s/^appVersion: .*/appVersion: \"${CLEAN_VERSION}\"/" chart/Chart.yaml
-          sed -i "s|repository: .*|repository: ghcr.io/darox/speedtest-exporter|" chart/values.yaml
-          
+
+          # Update README
+          sed -i "s|ghcr.io/darox/speedtest-exporter:[a-zA-Z0-9._-]*|ghcr.io/darox/speedtest-exporter:${CLEAN_VERSION}|g" README.md
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add chart/
-          git commit -m "chore: sync chart to v${CLEAN_VERSION}" || echo "No chart changes to commit"
-          git push
+          git add chart/Chart.yaml README.md
+          git commit -m "chore: release v${CLEAN_VERSION}" || echo "No changes to commit"
+          git push origin main
