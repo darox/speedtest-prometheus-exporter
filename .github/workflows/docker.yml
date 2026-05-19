@@ -96,6 +96,7 @@ jobs:
 
       - uses: peter-evans/create-pull-request@v8
         with:
+          base: main
           branch: release/${{ github.ref_name }}
           title: "chore: release ${{ github.ref_name }}"
           commit-message: "chore: release ${{ github.ref_name }}"
