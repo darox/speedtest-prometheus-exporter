@@ -1,1 +1,8 @@
 target/
+.git/
+.github/
+hooks/
+chart/
+*.md
+.env.example
+Makefile

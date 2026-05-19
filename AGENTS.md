@@ -23,21 +23,57 @@ Two real seams:
 - `SpeedtestRunner` — swap Ookla CLI for mock or alternative speedtest tool
 - `MetricsUpdater` — swap Prometheus for OTLP, InfluxDB, etc.
 
-## Build & Test
+## Makefile
+
+All actions go through `make`. No GitHub Actions — everything runs locally.
+
+### Development
+
+| Target | Description |
+|---|---|
+| `make docker` | Build single-arch image |
+| `make docker-multiarch` | Build multi-arch image (amd64 + arm64) |
+| `make test` | Run tests (19 tests, builds test target) |
+| `make lint` | Run clippy in builder image |
+| `make fmt` | Check formatting in builder image |
+| `make scan` | Trivy vulnerability scan (CRITICAL, HIGH, MEDIUM) |
+| `make audit` | Scan Rust crates for known CVEs (cargo-audit) |
+| `make helm-lint` | Lint chart and render templates |
+
+### Local Kind Cluster (pre-release validation)
+
+Deploy to a local kind cluster to verify the image and chart before releasing.
+
+| Target | Description |
+|---|---|
+| `make kind-create` | Create kind cluster (idempotent, skips if exists) |
+| `make kind-load` | Build image, load into kind |
+| `make kind-deploy` | Deploy chart with local image via helm |
+| `make kind-destroy` | Uninstall chart, delete namespace (keeps cluster) |
+| `make kind-clean` | Full teardown: uninstall chart + delete cluster |
+
+Cluster name is configurable: `make kind-create KIND_CLUSTER=my-cluster`.
+
+### Release
 
 ```bash
-# Build
-docker build -t speedtest-exporter .
-
-# Multi-arch
-docker buildx build --platform linux/arm64,linux/amd64 -t speedtest-exporter .
-
-# Test (runs 19 tests)
-docker build --target test -t speedtest-exporter:test .
-
-# Scan
-docker run --rm ghcr.io/aquasecurity/trivy@sha256:be1190afcb28352bfddc4ddeb71470835d16462af68d310f9f4bca710961a41e image --severity CRITICAL,HIGH,MEDIUM speedtest-exporter
+VERSION=v0.0.X make release
 ```
+
+Ordered pipeline — no irreversible action before all validation passes:
+
+| Phase | Target | Description |
+|---|---|---|
+| Validate | `release-check` | Clean tree, branch check, build, lint, fmt, test, scan, audit, helm-lint |
+| Build | `release-build` | Multi-arch image (local only, not pushed) |
+| Update | `release-update-chart` | Bump Chart.yaml, README.md, chart/README.md + verify sed succeeded |
+| Publish | `release-publish-chart` | Package chart, publish to gh-pages via git worktree |
+| Push | `release-push` | Tag and push image to GHCR (`vX.Y.Z`, `X.Y`, `X`, `sha-SHORT`) |
+| Tag | `release-tag` | Commit chart changes, create git tag, push to origin |
+
+Run `make release-check` for a dry-run validation without any side effects.
+
+**Prerequisites**: `docker` with buildx, `gh` CLI authenticated with `write:packages`, `helm`, clean git working tree, on `main` branch.
 
 ## Pinned Versions
 
@@ -45,9 +81,10 @@ All base images pinned by manifest list digest, all Rust crates pinned by Cargo.
 
 ## Rules
 
-After every code change:
-1. **Build** — `docker build -t speedtest-exporter .` must succeed
-2. **Test** — `docker build --target test -t speedtest-exporter:test .` must pass all tests
-3. **Scan** — `docker run --rm ghcr.io/aquasecurity/trivy@sha256:be1190afcb28352bfddc4ddeb71470835d16462af68d310f9f4bca710961a41e image --severity CRITICAL,HIGH speedtest-exporter` must be clean
-4. **Lint** — `cargo clippy -- -D warnings` (run in builder image if needed)
-5. **Format** — `cargo fmt --check` (run in builder image if needed)
+After every code change, run via makefile:
+1. **Lint** — `make lint` must pass
+2. **Format** — `make fmt` must pass
+3. **Build** — `make docker` must succeed
+4. **Test** — `make test` must pass all tests
+5. **Scan** — `make scan` must be clean
+6. **Audit** — `make audit` must be clean

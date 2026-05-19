@@ -6,7 +6,8 @@
 FROM docker.io/library/rust:1.95-slim@sha256:5021128d455987e7e7d6586bd7288fa876614821292614acbb761c21fc1ebb15 AS builder
 
 ARG TARGETARCH
-RUN if [ "$TARGETARCH" = "arm64" ]; then \
+RUN rustup component add clippy rustfmt && \
+    if [ "$TARGETARCH" = "arm64" ]; then \
         rustup target add aarch64-unknown-linux-musl; \
     elif [ "$TARGETARCH" = "amd64" ]; then \
         rustup target add x86_64-unknown-linux-musl; \
@@ -15,6 +16,14 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
     fi
 
 WORKDIR /app
+COPY Cargo.toml Cargo.lock ./
+RUN mkdir src && echo "fn main() {}" > src/main.rs
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+        cargo build --release --target aarch64-unknown-linux-musl; \
+    else \
+        cargo build --release --target x86_64-unknown-linux-musl; \
+    fi
+RUN rm -rf src
 COPY . .
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
         cargo build --release --target aarch64-unknown-linux-musl; \
@@ -34,12 +43,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends wget ca-certifi
     rm -rf /var/lib/apt/lists/*
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
         OOGLA_ARCH="aarch64"; \
+        OOGLA_SHA="3953d231da3783e2bf8904b6dd72767c5c6e533e163d3742fd0437affa431bd3"; \
     elif [ "$TARGETARCH" = "amd64" ]; then \
         OOGLA_ARCH="x86_64"; \
+        OOGLA_SHA="5690596c54ff9bed63fa3732f818a05dbc2db19ad36ed68f21ca5f64d5cfeeb7"; \
     else \
         echo "Unsupported arch: $TARGETARCH" && exit 1; \
     fi && \
     wget -qO/speedtest.tgz "https://install.speedtest.net/app/cli/ookla-speedtest-1.2.0-linux-${OOGLA_ARCH}.tgz" && \
+    echo "${OOGLA_SHA}  /speedtest.tgz" | sha256sum -c - && \
     tar xzf /speedtest.tgz -C /usr/local/bin/ && \
     rm /speedtest.tgz
 
