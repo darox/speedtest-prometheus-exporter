@@ -74,12 +74,8 @@ impl OoklaCliRunner {
     pub fn new(server_id: Option<String>) -> Self {
         Self { server_id }
     }
-}
 
-impl SpeedtestRunner for OoklaCliRunner {
-    fn run(&self) -> Result<SpeedtestResult, SpeedtestError> {
-        let start = std::time::Instant::now();
-
+    fn build_command(&self) -> std::process::Command {
         let mut cmd = std::process::Command::new("speedtest");
         cmd.arg("--accept-license").arg("--format=json");
 
@@ -87,7 +83,15 @@ impl SpeedtestRunner for OoklaCliRunner {
             cmd.arg("--server-id").arg(id);
         }
 
-        let output = cmd
+        cmd
+    }
+}
+
+impl SpeedtestRunner for OoklaCliRunner {
+    fn run(&self) -> Result<SpeedtestResult, SpeedtestError> {
+        let start = std::time::Instant::now();
+
+        let output = self.build_command()
             .output()
             .map_err(|e| SpeedtestError::ExecutionFailed(e.to_string()))?;
 
@@ -123,11 +127,13 @@ impl SpeedtestRunner for OoklaCliRunner {
 
 // --- Test helpers ---
 
+#[allow(dead_code)]
 pub struct MockRunner {
     pub sequence: Mutex<Vec<Result<SpeedtestResult, SpeedtestError>>>,
     pub call_count: Mutex<usize>,
 }
 
+#[allow(dead_code)]
 impl MockRunner {
     pub fn new(sequence: Vec<Result<SpeedtestResult, SpeedtestError>>) -> Self {
         Self {
@@ -170,6 +176,7 @@ impl SpeedtestRunner for MockRunner {
     }
 }
 
+#[allow(dead_code)]
 fn sample_ookla_json() -> &'static str {
     r#"{
         "type": "result",
@@ -278,5 +285,21 @@ mod tests {
 
         let e = SpeedtestError::EmptyOutput;
         assert!(format!("{e}").contains("empty"));
+    }
+
+    #[test]
+    fn build_command_without_server_id() {
+        let runner = OoklaCliRunner::new(None);
+        let cmd = runner.build_command();
+        let args = cmd.get_args().collect::<Vec<_>>();
+        assert_eq!(args, ["--accept-license", "--format=json"]);
+    }
+
+    #[test]
+    fn build_command_with_server_id() {
+        let runner = OoklaCliRunner::new(Some("50092".to_string()));
+        let cmd = runner.build_command();
+        let args = cmd.get_args().collect::<Vec<_>>();
+        assert_eq!(args, ["--accept-license", "--format=json", "--server-id", "50092"]);
     }
 }

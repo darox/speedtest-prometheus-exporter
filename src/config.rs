@@ -60,12 +60,7 @@ impl Config {
         })
     }
 
-    #[cfg(not(test))]
-    pub fn new() -> Result<Self, ConfigError> {
-        Self::from_env()
-    }
-
-    #[cfg(test)]
+    #[allow(dead_code)]
     pub fn new() -> Result<Self, ConfigError> {
         Self::from_env()
     }
