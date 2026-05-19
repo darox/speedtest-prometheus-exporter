@@ -1,5 +1,6 @@
 .PHONY: lint fmt test docker docker-test helm-lint scan audit \
 	release release-check release-build release-scan release-update-chart release-publish-chart release-tag release-push \
+	builder-setup \
 	kind-create kind-load kind-deploy kind-destroy kind-clean
 
 VERSION ?=
@@ -20,7 +21,7 @@ docker:
 	docker build -t speedtest-exporter .
 
 docker-multiarch:
-	docker buildx build --platform linux/amd64,linux/arm64 -t speedtest-exporter .
+	docker buildx build --builder multiarch --platform linux/amd64,linux/arm64 --load -t speedtest-exporter .
 
 helm-lint:
 	helm lint ./chart
@@ -35,6 +36,12 @@ audit:
 	docker build --target audit -t speedtest-exporter:audit . && \
 	docker run --rm -v $(shell pwd):/app -w /app speedtest-exporter:audit cargo audit
 
+builder-setup:
+	@if ! docker buildx ls | grep -q 'multiarch'; then \
+		docker buildx create --name multiarch --driver docker-container --use; \
+	fi
+	docker buildx inspect --bootstrap multiarch >/dev/null 2>&1
+
 # ── Release ──────────────────────────────────────────────
 # Ordered pipeline: validate → build → scan → update → tag → publish → push
 # All local operations complete before any external push.
@@ -47,6 +54,7 @@ release:
 	MAJOR="$${CLEAN%%.*}" && \
 	SHORT_SHA=$$(git rev-parse --short HEAD) && \
 	export RELEASE_CLEAN="$${CLEAN}" RELEASE_MINOR="$${MINOR}" RELEASE_MAJOR="$${MAJOR}" RELEASE_SHA="$${SHORT_SHA}" && \
+	$(MAKE) builder-setup && \
 	$(MAKE) release-check && \
 	$(MAKE) release-build && \
 	$(MAKE) release-scan && \
@@ -68,7 +76,7 @@ release-check:
 release-build:
 	@SHA="$${RELEASE_SHA:-$$(git rev-parse --short HEAD)}" && \
 	echo "Building multi-arch image (sha-$${SHA})" && \
-	docker buildx build --platform linux/amd64,linux/arm64 -t speedtest-exporter:release .
+	docker buildx build --builder multiarch --platform linux/amd64,linux/arm64 --load -t speedtest-exporter:release .
 
 release-scan:
 	docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
@@ -118,17 +126,13 @@ release-push:
 	MAJOR="$${RELEASE_MAJOR:-$${CLEAN%%.*}}" && \
 	SHA="$${RELEASE_SHA:-$$(git rev-parse --short HEAD)}" && \
 	echo "Pushing image tags: $${VERSION} $${CLEAN} $${MINOR} $${MAJOR} sha-$${SHA}" && \
-	docker tag speedtest-exporter:release "$${IMAGE}:$${VERSION}" && \
-	docker tag speedtest-exporter:release "$${IMAGE}:$${CLEAN}" && \
-	docker tag speedtest-exporter:release "$${IMAGE}:$${MINOR}" && \
-	docker tag speedtest-exporter:release "$${IMAGE}:$${MAJOR}" && \
-	docker tag speedtest-exporter:release "$${IMAGE}:sha-$${SHA}" && \
 	docker login ghcr.io -u darox -p "$$(gh auth token)" && \
-	docker push "$${IMAGE}:$${VERSION}" && \
-	docker push "$${IMAGE}:$${CLEAN}" && \
-	docker push "$${IMAGE}:$${MINOR}" && \
-	docker push "$${IMAGE}:$${MAJOR}" && \
-	docker push "$${IMAGE}:sha-$${SHA}" && \
+	docker buildx build --builder multiarch --platform linux/amd64,linux/arm64 --push \
+		-t "$${IMAGE}:$${VERSION}" \
+		-t "$${IMAGE}:$${CLEAN}" \
+		-t "$${IMAGE}:$${MINOR}" \
+		-t "$${IMAGE}:$${MAJOR}" \
+		-t "$${IMAGE}:sha-$${SHA}" . && \
 	git push origin main "$${VERSION}"
 
 # ── Local Kind Cluster ───────────────────────────────────
