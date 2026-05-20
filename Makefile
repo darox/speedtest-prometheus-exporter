@@ -90,7 +90,7 @@ release-update-chart:
 	sed -i '' "s|ghcr.io/darox/speedtest-prometheus-exporter:[a-zA-Z0-9._-]*|ghcr.io/darox/speedtest-prometheus-exporter:$${CLEAN}|g" README.md && \
 	grep -q "version: $${CLEAN}" chart/Chart.yaml || { echo "Chart.yaml version mismatch"; exit 1; } && \
 	grep -q "appVersion: \"$${CLEAN}\"" chart/Chart.yaml || { echo "Chart.yaml appVersion mismatch"; exit 1; } && \
-	grep -q "speedtest-exporter:$${CLEAN}" README.md || { echo "README.md image tag mismatch"; exit 1; }
+	grep -q "speedtest-prometheus-exporter:$${CLEAN}" README.md || { echo "README.md image tag mismatch"; exit 1; }
 
 release-tag:
 	@CLEAN="$${RELEASE_CLEAN:-$${VERSION#v}}" && \
