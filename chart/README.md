@@ -14,7 +14,7 @@ helm upgrade --install speedtest-exporter speedtest-exporter/speedtest-exporter
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | replicaCount | int | `1` | Number of exporter pods |
-| image.repository | string | `ghcr.io/darox/speedtest-exporter` | Container image repository |
+| image.repository | string | `ghcr.io/darox/speedtest-prometheus-exporter` | Container image repository |
 | image.pullPolicy | string | `IfNotPresent` | Kubernetes image pull policy |
 | image.tag | string | `""` | Image tag (defaults to `.Chart.AppVersion`) |
 | image.digest | string | `""` | Image SHA digest (overrides tag) |

@@ -87,7 +87,7 @@ release-update-chart:
 	@CLEAN="$${RELEASE_CLEAN:-$${VERSION#v}}" && \
 	sed -i '' "s/^version: .*/version: $${CLEAN}/" chart/Chart.yaml && \
 	sed -i '' 's/^appVersion: .*/appVersion: "'$${CLEAN}'"/' chart/Chart.yaml && \
-	sed -i '' "s|ghcr.io/darox/speedtest-exporter:[a-zA-Z0-9._-]*|ghcr.io/darox/speedtest-exporter:$${CLEAN}|g" README.md && \
+	sed -i '' "s|ghcr.io/darox/speedtest-prometheus-exporter:[a-zA-Z0-9._-]*|ghcr.io/darox/speedtest-prometheus-exporter:$${CLEAN}|g" README.md && \
 	grep -q "version: $${CLEAN}" chart/Chart.yaml || { echo "Chart.yaml version mismatch"; exit 1; } && \
 	grep -q "appVersion: \"$${CLEAN}\"" chart/Chart.yaml || { echo "Chart.yaml appVersion mismatch"; exit 1; } && \
 	grep -q "speedtest-exporter:$${CLEAN}" README.md || { echo "README.md image tag mismatch"; exit 1; }
@@ -118,7 +118,7 @@ release-publish-chart:
 	trap - EXIT
 
 release-push:
-	@IMAGE="ghcr.io/darox/speedtest-exporter" && \
+	@IMAGE="ghcr.io/darox/speedtest-prometheus-exporter" && \
 	CLEAN="$${RELEASE_CLEAN:-$${VERSION#v}}" && \
 	MINOR="$${RELEASE_MINOR:-$${CLEAN%.*}}" && \
 	MAJOR="$${RELEASE_MAJOR:-$${CLEAN%%.*}}" && \
