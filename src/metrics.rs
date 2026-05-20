@@ -26,11 +26,15 @@ impl PrometheusMetrics {
     pub fn new(registry: &Registry) -> Self {
         let download = Gauge::new(
             "speedtest_download_bps",
-            "Download speed in bits per second",
+            "Download speed in bits per second (converted from Ookla bytes/sec)",
         )
         .unwrap();
 
-        let upload = Gauge::new("speedtest_upload_bps", "Upload speed in bits per second").unwrap();
+        let upload = Gauge::new(
+            "speedtest_upload_bps",
+            "Upload speed in bits per second (converted from Ookla bytes/sec)",
+        )
+        .unwrap();
 
         let ping_latency = Gauge::new(
             "speedtest_ping_latency_seconds",

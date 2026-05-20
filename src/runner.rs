@@ -110,8 +110,8 @@ impl SpeedtestRunner for OoklaCliRunner {
         let elapsed = start.elapsed().as_secs_f64();
 
         Ok(SpeedtestResult {
-            download_bps: result.download.bandwidth,
-            upload_bps: result.upload.bandwidth,
+            download_bps: result.download.bandwidth * 8.0,
+            upload_bps: result.upload.bandwidth * 8.0,
             ping_latency_seconds: result.ping.latency / 1000.0,
             jitter_seconds: result.ping.jitter / 1000.0,
             packet_loss_ratio: result.packet_loss.unwrap_or(0.0) / 100.0,
