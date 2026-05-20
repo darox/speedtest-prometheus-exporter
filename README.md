@@ -6,7 +6,7 @@ Minimal Prometheus exporter for Ookla Speedtest CLI.
 
 ```bash
 # Pre-built image
-docker run -d -p 9798:9798 ghcr.io/darox/speedtest-prometheus-exporter:0.0.2
+docker run -d -p 9798:9798 ghcr.io/darox/speedtest-prometheus-exporter:0.0.3
 ```
 
 ## Configuration

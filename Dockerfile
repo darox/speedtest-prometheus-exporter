@@ -1,6 +1,8 @@
 # Multi-arch Dockerfile: arm64 + amd64
 # Build: docker buildx build --platform linux/arm64,linux/amd64 -t speedtest-exporter .
 
+ARG GHCR_REPO=ghcr.io/darox/speedtest-prometheus-exporter
+
 # Stage 1: Build Rust binary (statically linked with musl)
 # Pin manifest list: rust:1.95-slim
 FROM docker.io/library/rust:1.95-slim@sha256:5021128d455987e7e7d6586bd7288fa876614821292614acbb761c21fc1ebb15 AS builder
@@ -72,6 +74,11 @@ COPY --from=ookla-downloader /etc/ssl/certs /out/ssl/certs
 # Stage 5: Minimal runtime (no shell, no glibc)
 # Pin manifest list: gcr.io/distroless/static
 FROM gcr.io/distroless/static@sha256:3592aa8171c77482f62bbc4164e6a2d141c6122554ace66e5cc910cadb961ff0
+
+ARG GHCR_REPO
+LABEL org.opencontainers.image.source="https://github.com/darox/speedtest-prometheus-exporter"
+LABEL org.opencontainers.image.description="Prometheus exporter for Ookla Speedtest CLI"
+LABEL org.opencontainers.image.licenses="MIT"
 
 COPY --from=assemble /out/speedtest-exporter /speedtest-exporter
 COPY --from=assemble /out/speedtest /usr/local/bin/speedtest
