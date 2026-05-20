@@ -16,14 +16,6 @@ RUN rustup component add clippy rustfmt && \
     fi
 
 WORKDIR /app
-COPY Cargo.toml Cargo.lock ./
-RUN mkdir src && echo "fn main() {}" > src/main.rs
-RUN if [ "$TARGETARCH" = "arm64" ]; then \
-        cargo build --release --target aarch64-unknown-linux-musl; \
-    else \
-        cargo build --release --target x86_64-unknown-linux-musl; \
-    fi
-RUN rm -rf src
 COPY . .
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
         cargo build --release --target aarch64-unknown-linux-musl; \

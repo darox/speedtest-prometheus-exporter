@@ -44,8 +44,6 @@ async fn run_loop(
     metrics: Arc<dyn MetricsUpdater>,
     interval_secs: u64,
 ) {
-    handle_result(runner.run(), metrics.as_ref());
-
     let mut ticker = interval(Duration::from_secs(interval_secs));
     loop {
         ticker.tick().await;
